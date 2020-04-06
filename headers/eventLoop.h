@@ -1,4 +1,4 @@
-/* defines.h
+/* eventLoop.h
 
 MIT License
 
@@ -22,26 +22,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
-#ifndef DEFINES_H
-#define DEFINES_H
+#ifndef EVENTLOOP_H
+#define EVENTLOOP_H
 
-#include <stdint.h>
-
-/* # /user-defined constants start # # # */
-#define Tab /*--------------------*/ "    "
-#define DefaultCharactersCount /*-*/ 255
-#define DefaultLinesCount /*------*/ 150
-/* # /user-defined constants end # # # # */
-
-#define ContinueMode /*-----------*/ 0
-#define RestartMode /*------------*/ 1
-#define ExitMode /*---------------*/ 2
-
-typedef uint8_t bool;
-
-typedef struct{
-	unsigned int keycode;
-	uint16_t masks;
-} Shortcut;
+void eventLoop(void);
 
 #endif
