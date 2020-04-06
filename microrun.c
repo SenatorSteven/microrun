@@ -1,3 +1,5 @@
+/* microrun.c
+
 MIT License
 
 Copyright (C) 2020 Stefanos "Steven" Tsakiris
@@ -18,4 +20,32 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+SOFTWARE. */
+
+#include <stdint.h>
+#include <stdio.h>
+#include <X11/Xlib.h>
+#include "headers/defines.h"
+#include "headers/getParameters.h"
+#include "headers/eventLoop.h"
+
+extern const char *programName;
+extern uint8_t mode;
+extern Display *display;
+
+int main(const int argumentCount, const char *const *const argumentVector){
+	if(getParameters((unsigned int)argumentCount, argumentVector)){
+		mode = ContinueMode;
+		while(mode == ContinueMode || mode == RestartMode){
+			mode = ContinueMode;
+			if((display = XOpenDisplay(NULL))){
+				eventLoop();
+				XCloseDisplay(display);
+			}else{
+				fprintf(stderr, "%s: could not connect to server\n", programName);
+				mode = ExitMode;
+			}
+		}
+	}
+	return 0;
+}

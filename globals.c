@@ -1,3 +1,5 @@
+/* globals.c
+
 MIT License
 
 Copyright (C) 2020 Stefanos "Steven" Tsakiris
@@ -18,4 +20,15 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+SOFTWARE. */
+
+#include <stdint.h>
+#include <stdio.h>
+#include <X11/Xlib.h>
+#include "headers/defines.h"
+
+const char *programName;
+const char *configPath;
+uint8_t mode;
+Display *display;
+char line[DefaultCharactersCount + 1];
