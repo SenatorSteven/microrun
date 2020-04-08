@@ -23,7 +23,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <X11/Xlib.h>
 #include "headers/defines.h"
@@ -32,73 +31,53 @@ SOFTWARE. */
 extern const char *programName;
 extern uint8_t mode;
 extern Display *display;
+extern unsigned int maxCommandLength;
+extern unsigned int shortcutAmount;
 
-static int errorHandler(Display *const display, XErrorEvent *const errorEvent);
-static bool grabKeys(const Shortcut *const shortcut, const unsigned int shortcutAmount);
 static bool isCommand(const char *const command, const char *const vector);
 
 void eventLoop(void){
-	XSetErrorHandler(errorHandler);
-	unsigned int shortcutAmount;
-	unsigned int maxCommandLength;
-	readConfigArrayLengths(&shortcutAmount, &maxCommandLength);
 	Shortcut shortcut[shortcutAmount];
-	readConfigKeys(shortcutAmount, shortcut);
-	if(grabKeys(shortcut, shortcutAmount)){
-		char _command[shortcutAmount][maxCommandLength];
-		char *command[shortcutAmount];
-
-
-		XSelectInput(display, XDefaultRootWindow(display), KeyPressMask);
-
-
-
-		XEvent event;
-		unsigned int currentShortcut;
-		for(;;){
-			XNextEvent(display, &event);
-			if(event.type == KeyPress){
-				fprintf(stdout, "keypress\n");
-				/*for(currentShortcut = 0; currentShortcut < shortcutAmount; ++currentShortcut){
-					if(event.xkey.keycode == shortcut[currentShortcut].keycode && event.xkey.state == shortcut[currentShortcut].masks){
-						if(isCommand("restart", command[currentShortcut])){
-							mode = RestartMode;
-						}else if(isCommand("exit", command[currentShortcut])){
-							mode = ExitMode;
-						}else{
-							system(command[currentShortcut]);
-						}
-						break;
-					}
-				}
-				if(mode == RestartMode || mode == ExitMode){
-					break;
-				}*/
-			}
-		}
-	}else{
-		fprintf(stderr, "%s: no keys to grab\n", programName);
-		mode = ExitMode;
+	char _command[shortcutAmount][maxCommandLength + 1];
+	char *command[shortcutAmount];
+	unsigned int currentShortcut;
+	for(currentShortcut = 0; currentShortcut < shortcutAmount; ++currentShortcut){
+		command[currentShortcut] = _command[currentShortcut];
 	}
-	return;
-}
-static int errorHandler(Display *const display, XErrorEvent *const errorEvent){
-	int value = 0;
-	XErrorEvent dereferencedErrorEvent = *errorEvent;
-	if(dereferencedErrorEvent.request_code == 33){
-		fprintf(stderr, "%s: could not grab button (already grabbed), ignoring\n", programName);
-	}
-	return value;
-}
-static bool grabKeys(const Shortcut *const shortcut, const unsigned int shortcutAmount){
-	bool value = 0;
-	for(unsigned int currentShortcut = 0; currentShortcut < shortcutAmount; ++currentShortcut){
+	readConfigKeysCommands(shortcut, command);
+	for(currentShortcut = 0; currentShortcut < shortcutAmount; ++currentShortcut){
 		if(shortcut[currentShortcut].keycode != AnyKey){
 			XGrabKey(display, shortcut[currentShortcut].keycode, shortcut[currentShortcut].masks, XDefaultRootWindow(display), True, GrabModeAsync, GrabModeAsync);
-			value = 1;
 		}
 	}
-	return value;
+	XSelectInput(display, XDefaultRootWindow(display), KeyPressMask);
+	XEvent event;
+	for(;;){
+		XNextEvent(display, &event);
+		if(event.type == KeyPress){
+			for(currentShortcut = 0; currentShortcut < shortcutAmount; ++currentShortcut){
+				if(event.xkey.keycode == shortcut[currentShortcut].keycode && event.xkey.state == shortcut[currentShortcut].masks){
+					if(isCommand("restart", command[currentShortcut])){
+						mode = RestartMode;
+					}else if(isCommand("exit", command[currentShortcut])){
+						mode = ExitMode;
+					}else{
+						system(command[currentShortcut]);
+					}
+					break;
+				}
+			}
+			if(mode != ContinueMode){
+				break;
+			}
+		}
+	}
+	for(currentShortcut = 0; currentShortcut < shortcutAmount; ++currentShortcut){
+		if(shortcut[currentShortcut].keycode != AnyKey){
+			XUngrabKey(display, shortcut[currentShortcut].keycode, shortcut[currentShortcut].masks, XDefaultRootWindow(display));
+		}
+	}
+	return;
 }
 static bool isCommand(const char *const command, const char *const vector){
 	bool value = 0;

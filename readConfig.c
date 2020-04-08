@@ -24,7 +24,8 @@ SOFTWARE. */
 
 #include <stdint.h>
 #include <stdio.h>
-#include <X11/Xlib.h>
+#include <stdlib.h>
+#include <X11/X.h>
 #include "headers/defines.h"
 
 #define NoPositions /*-------------*/ 0
@@ -39,9 +40,11 @@ SOFTWARE. */
 extern const char *programName;
 extern const char *configPath;
 extern char line[DefaultCharactersCount + 1];
+extern unsigned int maxCommandLength;
+extern unsigned int shortcutAmount;
 
 static FILE *getConfigFile(void);
-static bool getLine(FILE *file);
+static bool getLine(FILE *const file);
 static void pushWhitespace(unsigned int *const element);
 static bool isVariable(const char *const variable, unsigned int *const element);
 static unsigned int getUnsignedIntegerNumber(const unsigned int currentLine, unsigned int *const element);
@@ -51,13 +54,19 @@ static unsigned int getQuotedString(char *const string, unsigned int *const elem
 static bool getKey(unsigned int *const element, unsigned int *const keycode, uint16_t *const masks);
 static void printLineError(const unsigned int currentLine);
 
-bool readConfigArrayLengths(unsigned int *const shortcutAmount, unsigned int *const maxCommandLength){
+bool readConfigScan(void){
 	bool value = 0;
-	FILE *file = getConfigFile();
+	FILE *const file = getConfigFile();
 	if(file){
 		unsigned int maxLinesCount = DefaultLinesCount;
 		unsigned int element;
-		uint16_t hasReadVariable = NoPositions;
+		uint8_t hasReadVariable = NoPositions;
+		unsigned int startingPoint;
+		unsigned int keycode;
+		uint16_t masks;
+		unsigned int length;
+		maxCommandLength = 0;
+		shortcutAmount = 0;
 		for(unsigned int currentLine = 1; currentLine <= maxLinesCount; ++currentLine){
 			if(!getLine(file)){
 				break;
@@ -76,7 +85,28 @@ bool readConfigArrayLengths(unsigned int *const shortcutAmount, unsigned int *co
 						continue;
 					}
 				}
-				if(!isVariable("lines", &element)){
+				if(isVariable("onstart", &element)){
+					pushWhitespace(&element);
+					startingPoint = element;
+					char command[getQuotedStringLength(&element) + 1];
+					element = startingPoint;
+					command[getQuotedString(command, &element)] = '\0';
+					system(command);
+					continue;
+				}
+				if(isVariable("keycode", &element)){
+					pushWhitespace(&element);
+					getKey(&element, &keycode, &masks);
+					length = getQuotedStringLength(&element);
+					if(length > maxCommandLength){
+						maxCommandLength = length;
+					}
+					++shortcutAmount;
+					continue;
+				}
+				if(!isVariable("lines",   &element) &&
+				   !isVariable("onstart", &element) &&
+				   !isVariable("keycode", &element)){
 					printLineError(currentLine);
 					continue;
 				}
@@ -87,19 +117,20 @@ bool readConfigArrayLengths(unsigned int *const shortcutAmount, unsigned int *co
 	}
 	return value;
 }
-bool readConfigKeys(const unsigned int shortcutAmount, Shortcut *const shortcut){
+bool readConfigKeysCommands(Shortcut *const shortcut, char *const *const command){
 	bool value = 0;
-	FILE *file = getConfigFile();
+	FILE *const file = getConfigFile();
 	if(file){
 		unsigned int currentShortcut;
 		for(currentShortcut = 0; currentShortcut < shortcutAmount; ++currentShortcut){
 			shortcut[currentShortcut].keycode = AnyKey;
 			shortcut[currentShortcut].masks = None;
+			command[currentShortcut][0] = '\0';
 		}
-		currentShortcut = 0;
 		unsigned int maxLinesCount = DefaultLinesCount;
 		unsigned int element;
-		uint16_t hasReadVariable = NoPositions;
+		uint8_t hasReadVariable = NoPositions;
+		currentShortcut = 0;
 		for(unsigned int currentLine = 1; currentLine <= maxLinesCount; ++currentLine){
 			if(!getLine(file)){
 				break;
@@ -117,6 +148,13 @@ bool readConfigKeys(const unsigned int shortcutAmount, Shortcut *const shortcut)
 						}
 						continue;
 					}
+				}
+				if(isVariable("keycode", &element)){
+					pushWhitespace(&element);
+					getKey(&element, &shortcut[currentShortcut].keycode, &shortcut[currentShortcut].masks);
+					command[currentShortcut][getQuotedString(command[currentShortcut], &element)] = '\0';
+					++currentShortcut;
+					continue;
 				}
 			}
 		}
@@ -141,6 +179,41 @@ static FILE *getConfigFile(void){
 			fprintf(config, "# ║   #     #     #   #     # # #     #       #     # # #     #       #     # # #     #       #   ║\n");
 			fprintf(config, "# ║                                                                                               ║\n");
 			fprintf(config, "# ╚═══════════════════════════════════════════════════════════════════════════════════════════════╝\n\n\n\n");
+			fprintf(config, "# # # # #\n");
+			fprintf(config, "# rules #\n");
+			fprintf(config, "# # # # #\n\n");
+			fprintf(config, "# certain values can be changed through the headers/defines.h of the program\'s source\n");
+			fprintf(config, "# this file needs to be user-specified when launched\n");
+			fprintf(config, "# max line character length is %u\n", DefaultCharactersCount);
+			fprintf(config, "# comments are signified by a \'#\' at the beginning of the line\n");
+			fprintf(config, "# one variable per line, followed by \'=\' and its value\n");
+			fprintf(config, "# all spaces and tabs are ignored\n");
+			fprintf(config, "# all variables are valued 0 or undefined by default unless stated otherwise\n");
+			fprintf(config, "# all variables can be written with random capitalization\n");
+			fprintf(config, "# text require the same quote character before and after it\n");
+			fprintf(config, "# text quotation is variable, the first character is the quote character\n\n\n\n");
+			fprintf(config, "# # # # # # #\n");
+			fprintf(config, "# variables #\n");
+			fprintf(config, "# # # # # # #\n\n");
+			fprintf(config, "# lines, onStart, keycode\n\n\n\n");
+			fprintf(config, "# # # # # # # # # # # #\n");
+			fprintf(config, "# variable definition #\n");
+			fprintf(config, "# # # # # # # # # # # #\n\n");
+			fprintf(config, "# lines: config lines to be read\n");
+			fprintf(config, "# onStart: command to be executed on program launch\n");
+			fprintf(config, "# keycode: combination of keycode + modifiers used to execute command\n\n\n\n");
+			fprintf(config, "# # # # #\n");
+			fprintf(config, "# extra #\n");
+			fprintf(config, "# # # # #\n\n");
+			fprintf(config, "# lines: default %u\n", DefaultLinesCount);
+			fprintf(config, "# onStart: does not take \'=\'\n");
+			fprintf(config, "# keycode: does not take \'=\'\n");
+			fprintf(config, "# keycode: modifiers: AnyModifier, Shift, Lock, Control, Mod1, Mod2, Mod3, Mod4, Mod5\n");
+			fprintf(config, "# keycode: program commands: restart, exit\n\n\n\n");
+			fprintf(config, "# /config start # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #\n");
+			fprintf(config, "lines = 66\n");
+			fprintf(config, "# keycode 27 + Mod4 \"restart\"\n");
+			fprintf(config, "# /config end # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #\n");
 			fclose(config);
 			config = fopen(configPath, "r");
 		}else{
@@ -149,7 +222,7 @@ static FILE *getConfigFile(void){
 	}
 	return config;
 }
-static bool getLine(FILE *file){
+static bool getLine(FILE *const file){
 	bool value = 0;
 	unsigned int element = 0;
 	for(;;){

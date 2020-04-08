@@ -23,7 +23,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
 #include <stdint.h>
-#include <stdio.h>
 #include <X11/Xlib.h>
 #include "headers/defines.h"
 
@@ -32,3 +31,5 @@ const char *configPath;
 uint8_t mode;
 Display *display;
 char line[DefaultCharactersCount + 1];
+unsigned int maxCommandLength;
+unsigned int shortcutAmount;

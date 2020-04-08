@@ -27,19 +27,27 @@ SOFTWARE. */
 #include <X11/Xlib.h>
 #include "headers/defines.h"
 #include "headers/getParameters.h"
+#include "headers/readConfig.h"
 #include "headers/eventLoop.h"
 
 extern const char *programName;
 extern uint8_t mode;
 extern Display *display;
+extern unsigned int shortcutAmount;
 
 int main(const int argumentCount, const char *const *const argumentVector){
 	if(getParameters((unsigned int)argumentCount, argumentVector)){
 		mode = ContinueMode;
-		while(mode == ContinueMode || mode == RestartMode){
+		while(mode != ExitMode){
 			mode = ContinueMode;
 			if((display = XOpenDisplay(NULL))){
-				eventLoop();
+				readConfigScan();
+				if(shortcutAmount){
+					eventLoop();
+				}else{
+					fprintf(stderr, "%s: no shortcut specified\n", programName);
+					mode = ExitMode;
+				}
 				XCloseDisplay(display);
 			}else{
 				fprintf(stderr, "%s: could not connect to server\n", programName);
