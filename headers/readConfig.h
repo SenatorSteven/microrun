@@ -25,7 +25,7 @@ SOFTWARE. */
 #ifndef READCONFIG_H
 #define READCONFIG_H
 
-bool readConfigArrayLengths(unsigned int *const shortcutAmount, unsigned int *const maxCommandLength);
-bool readConfigKeys(const unsigned int shortcutAmount, Shortcut *const shortcut);
+bool readConfigScan(void);
+bool readConfigKeysCommands(Shortcut *const shortcut, char *const *const command);
 
 #endif

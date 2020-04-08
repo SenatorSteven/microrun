@@ -25,12 +25,10 @@ SOFTWARE. */
 #ifndef DEFINES_H
 #define DEFINES_H
 
-#include <stdint.h>
-
 /* # /user-defined constants start # # # */
 #define Tab /*--------------------*/ "    "
 #define DefaultCharactersCount /*-*/ 255
-#define DefaultLinesCount /*------*/ 150
+#define DefaultLinesCount /*------*/ 100
 /* # /user-defined constants end # # # # */
 
 #define ContinueMode /*-----------*/ 0
