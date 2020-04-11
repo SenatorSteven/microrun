@@ -62,15 +62,12 @@ bool getParameters(const unsigned int argumentCount, const char *const *const ar
 						}else{
 							configPath = argumentVector[currentArgument];
 							if(configPath[0] == '/'){
-								dir = opendir(configPath);
-								if(!dir){
-									file = fopen(configPath, "r");
-									if(file){
+								if(!(dir = opendir(configPath))){
+									if((file = fopen(configPath, "r"))){
 										fclose(file);
 										continue;
 									}else{
-										file = fopen(configPath, "w");
-										if(file){
+										if((file = fopen(configPath, "w"))){
 											fclose(file);
 											remove(configPath);
 											continue;
