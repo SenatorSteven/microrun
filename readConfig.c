@@ -454,8 +454,8 @@ static unsigned int getQuotedStringLength(unsigned int *const element){
 	return length;
 }
 static unsigned int getQuotedString(char *const string, unsigned int *const element){
-	unsigned int currentCharacter = 0;
 	unsigned int dereferencedElement = *element;
+	unsigned int currentCharacter = 0;
 	const char quotation = line[dereferencedElement];
 	++dereferencedElement;
 	while(line[dereferencedElement] != quotation && line[dereferencedElement]){
