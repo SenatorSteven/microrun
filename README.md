@@ -29,7 +29,7 @@ Keypress listener and startup command runner for the X Window System.
 
 ## Features
 - Extremely verbose and helpful default configuration
-- Ability to execute startup commands e.g. "feh background.png"
+- Ability to execute startup commands e.g. "feh --bg-fill background.png"
 - Ability to execute commands on keypress e.g. "firefox"
 - Ability to restart after a configuration edit
 
