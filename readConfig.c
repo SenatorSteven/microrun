@@ -209,9 +209,10 @@ static FILE *getConfigFile(void){
 			fprintf(config, "# onStart: does not take \'=\'\n");
 			fprintf(config, "# keycode: does not take \'=\'\n");
 			fprintf(config, "# keycode: modifiers: AnyModifier, Shift, Lock, Control, Mod1, Mod2, Mod3, Mod4, Mod5\n");
-			fprintf(config, "# keycode: program commands: restart, exit\n\n\n\n");
+			fprintf(config, "# keycode: program commands: restart, exit\n");
+			fprintf(config, "# math operands: +, -, *, /, (, )\n\n\n\n");
 			fprintf(config, "# /config start # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #\n");
-			fprintf(config, "lines = 66\n");
+			fprintf(config, "lines = 67\n");
 			fprintf(config, "# keycode 27 + Mod4 \"restart\"\n");
 			fprintf(config, "# /config end # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #\n");
 			fclose(config);
