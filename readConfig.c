@@ -85,7 +85,7 @@ bool readConfigScan(void){
 						continue;
 					}
 				}
-				if(isVariable("onstart", &element)){
+				if(isVariable("onStart", &element)){
 					pushWhitespace(&element);
 					startingPoint = element;
 					char command[getQuotedStringLength(&element) + 1];
@@ -105,7 +105,7 @@ bool readConfigScan(void){
 					continue;
 				}
 				if(!isVariable("lines",   &element) &&
-				   !isVariable("onstart", &element) &&
+				   !isVariable("onStart", &element) &&
 				   !isVariable("keycode", &element)){
 					printLineError(currentLine);
 					continue;
