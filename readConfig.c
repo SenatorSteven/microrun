@@ -104,11 +104,13 @@ bool readConfigScan(void){
 					++shortcutAmount;
 					continue;
 				}
-				if(!isVariable("lines",   &element) &&
-				   !isVariable("onStart", &element) &&
-				   !isVariable("keycode", &element)){
-					printLineError(currentLine);
-					continue;
+				if(line[element]){
+					if(!isVariable("lines",   &element) &&
+					   !isVariable("onStart", &element) &&
+					   !isVariable("keycode", &element)){
+						printLineError(currentLine);
+						continue;
+					}
 				}
 			}
 		}
@@ -523,14 +525,12 @@ static bool getKey(unsigned int *const element, unsigned int *const keycode, uin
 	return value;
 }
 static void printLineError(const unsigned int currentLine){
-	if(line[0]){
-		unsigned int element = 0;
-		fprintf(stderr, "%s: line %u: \"", programName, currentLine);
-		while(line[element]){
-			fprintf(stderr, "%c", line[element]);
-			++element;
-		}
-		fprintf(stderr, "\" not recognized as an internal variable\n");
+	unsigned int element = 0;
+	fprintf(stderr, "%s: line %u: \"", programName, currentLine);
+	while(line[element]){
+		fprintf(stderr, "%c", line[element]);
+		++element;
 	}
+	fprintf(stderr, "\" not recognized as an internal variable\n");
 	return;
 }
