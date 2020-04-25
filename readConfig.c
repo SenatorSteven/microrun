@@ -30,6 +30,8 @@ SOFTWARE. */
 
 #define NoPositions /*-------------*/ 0
 #define LinesPosition /*-----------*/ (1 << 0)
+#define RestartPosition /*---------*/ (1 << 1)
+#define ExitPosition /*------------*/ (1 << 2)
 
 #define NoOperation /*-------------*/ 0
 #define AdditionOperation /*-------*/ 1
@@ -97,20 +99,28 @@ bool readConfigScan(void){
 				if(isVariable("keycode", &element)){
 					pushWhitespace(&element);
 					getKey(&element, &keycode, &masks);
-					length = getQuotedStringLength(&element);
+					if(isVariable("restart", &element)){
+						if(!(hasReadVariable & RestartPosition)){
+							length = 7;
+							++shortcutAmount;
+						}
+					}else if(isVariable("exit", &element)){
+						if(!(hasReadVariable & ExitPosition)){
+							length = 4;
+							++shortcutAmount;
+						}
+					}else{
+						length = getQuotedStringLength(&element);
+						++shortcutAmount;
+					}
 					if(length > maxCommandLength){
 						maxCommandLength = length;
 					}
-					++shortcutAmount;
 					continue;
 				}
 				if(line[element]){
-					if(!isVariable("lines",   &element) &&
-					   !isVariable("onStart", &element) &&
-					   !isVariable("keycode", &element)){
-						printLineError(currentLine);
-						continue;
-					}
+					printLineError(currentLine);
+					continue;
 				}
 			}
 		}
@@ -154,8 +164,31 @@ bool readConfigKeysCommands(Shortcut *const shortcut, char *const *const command
 				if(isVariable("keycode", &element)){
 					pushWhitespace(&element);
 					getKey(&element, &shortcut[currentShortcut].keycode, &shortcut[currentShortcut].masks);
-					command[currentShortcut][getQuotedString(command[currentShortcut], &element)] = '\0';
-					++currentShortcut;
+					if(isVariable("restart", &element)){
+						if(!(hasReadVariable & RestartPosition)){
+							command[currentShortcut][0] = 'r';
+							command[currentShortcut][1] = 'e';
+							command[currentShortcut][2] = 's';
+							command[currentShortcut][3] = 't';
+							command[currentShortcut][4] = 'a';
+							command[currentShortcut][5] = 'r';
+							command[currentShortcut][6] = 't';
+							command[currentShortcut][7] = '\0';
+							++currentShortcut;
+						}
+					}else if(isVariable("exit", &element)){
+						if(!(hasReadVariable & ExitPosition)){
+							command[currentShortcut][0] = 'e';
+							command[currentShortcut][1] = 'x';
+							command[currentShortcut][2] = 'i';
+							command[currentShortcut][3] = 't';
+							command[currentShortcut][4] = '\0';
+							++currentShortcut;
+						}
+					}else{
+						command[currentShortcut][getQuotedString(command[currentShortcut], &element)] = '\0';
+						++currentShortcut;
+					}
 					continue;
 				}
 			}
