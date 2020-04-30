@@ -34,49 +34,45 @@ extern Display *display;
 extern unsigned int maxCommandLength;
 extern unsigned int shortcutAmount;
 
+static void grabKeys(Shortcut *const shortcut);
 static bool isCommand(const char *const command, const char *const vector);
+static void ungrabKeys(Shortcut *const shortcut);
 
 void eventLoop(void){
 	Shortcut shortcut[shortcutAmount];
 	char _command[shortcutAmount][maxCommandLength + 1];
 	char *command[shortcutAmount];
-	unsigned int currentShortcut;
-	for(currentShortcut = 0; currentShortcut < shortcutAmount; ++currentShortcut){
+	for(unsigned int currentShortcut = 0; currentShortcut < shortcutAmount; ++currentShortcut){
 		command[currentShortcut] = _command[currentShortcut];
 	}
 	readConfigKeysCommands(shortcut, command);
-	for(currentShortcut = 0; currentShortcut < shortcutAmount; ++currentShortcut){
-		if(shortcut[currentShortcut].keycode != AnyKey){
-			XGrabKey(display, shortcut[currentShortcut].keycode, shortcut[currentShortcut].masks, XDefaultRootWindow(display), True, GrabModeAsync, GrabModeAsync);
-		}
-	}
+	grabKeys(shortcut);
 	XSelectInput(display, XDefaultRootWindow(display), KeyPressMask);
-	XEvent event;
-	for(;;){
-		XNextEvent(display, &event);
-		if(event.type == KeyPress){
-			for(currentShortcut = 0; currentShortcut < shortcutAmount; ++currentShortcut){
-				if(event.xkey.keycode == shortcut[currentShortcut].keycode && event.xkey.state == shortcut[currentShortcut].masks){
-					if(isCommand("restart", command[currentShortcut])){
-						mode = RestartMode;
-					}else if(isCommand("exit", command[currentShortcut])){
-						mode = ExitMode;
-					}else{
-						system(command[currentShortcut]);
+	{
+		XEvent event;
+		unsigned int currentShortcut;
+		for(;;){
+			XNextEvent(display, &event);
+			if(event.type == KeyPress){
+				for(currentShortcut = 0; currentShortcut < shortcutAmount; ++currentShortcut){
+					if(event.xkey.keycode == shortcut[currentShortcut].keycode && event.xkey.state == shortcut[currentShortcut].masks){
+						if(isCommand("restart", command[currentShortcut])){
+							mode = RestartMode;
+						}else if(isCommand("exit", command[currentShortcut])){
+							mode = ExitMode;
+						}else{
+							system(command[currentShortcut]);
+						}
+						break;
 					}
+				}
+				if(mode != ContinueMode){
 					break;
 				}
 			}
-			if(mode != ContinueMode){
-				break;
-			}
 		}
 	}
-	for(currentShortcut = 0; currentShortcut < shortcutAmount; ++currentShortcut){
-		if(shortcut[currentShortcut].keycode != AnyKey){
-			XUngrabKey(display, shortcut[currentShortcut].keycode, shortcut[currentShortcut].masks, XDefaultRootWindow(display));
-		}
-	}
+	ungrabKeys(shortcut);
 	return;
 }
 static bool isCommand(const char *const command, const char *const vector){
@@ -105,4 +101,19 @@ static bool isCommand(const char *const command, const char *const vector){
 		value = 1;
 	}
 	return value;
+}
+static void grabKeys(Shortcut *const shortcut){
+	for(unsigned int currentShortcut = 0; currentShortcut < shortcutAmount; ++currentShortcut){
+		if(shortcut[currentShortcut].keycode != AnyKey){
+			XGrabKey(display, shortcut[currentShortcut].keycode, shortcut[currentShortcut].masks, XDefaultRootWindow(display), True, GrabModeAsync, GrabModeAsync);
+		}
+	}
+	XSync(display, False);
+}
+static void ungrabKeys(Shortcut *const shortcut){
+	for(unsigned int currentShortcut = 0; currentShortcut < shortcutAmount; ++currentShortcut){
+		if(shortcut[currentShortcut].keycode != AnyKey){
+			XUngrabKey(display, shortcut[currentShortcut].keycode, shortcut[currentShortcut].masks, XDefaultRootWindow(display));
+		}
+	}
 }

@@ -37,8 +37,7 @@ extern unsigned int shortcutAmount;
 
 int main(const int argumentCount, const char *const *const argumentVector){
 	if(getParameters((unsigned int)argumentCount, argumentVector)){
-		mode = ContinueMode;
-		while(mode != ExitMode){
+		for(;;){
 			mode = ContinueMode;
 			if((display = XOpenDisplay(NULL))){
 				readConfigScan();
@@ -52,6 +51,9 @@ int main(const int argumentCount, const char *const *const argumentVector){
 			}else{
 				fprintf(stderr, "%s: could not connect to server\n", programName);
 				mode = ExitMode;
+			}
+			if(mode == ExitMode){
+				break;
 			}
 		}
 	}

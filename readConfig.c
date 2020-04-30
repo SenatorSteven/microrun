@@ -53,22 +53,20 @@ static unsigned int getUnsignedIntegerNumber(const unsigned int currentLine, uns
 static int getIntegerNumber(unsigned int *const element);
 static unsigned int getQuotedStringLength(unsigned int *const element);
 static unsigned int getQuotedString(char *const string, unsigned int *const element);
-static bool getKey(unsigned int *const element, unsigned int *const keycode, uint16_t *const masks);
+static Shortcut getKey(unsigned int *const element);
 static void printLineError(const unsigned int currentLine);
 
 bool readConfigScan(void){
 	bool value = 0;
 	FILE *const file = getConfigFile();
 	if(file){
+		maxCommandLength = 0;
+		shortcutAmount = 0;
 		unsigned int maxLinesCount = DefaultLinesCount;
 		unsigned int element;
 		uint8_t hasReadVariable = NoPositions;
 		unsigned int startingPoint;
-		unsigned int keycode;
-		uint16_t masks;
 		unsigned int length;
-		maxCommandLength = 0;
-		shortcutAmount = 0;
 		for(unsigned int currentLine = 1; currentLine <= maxLinesCount; ++currentLine){
 			if(!getLine(file)){
 				break;
@@ -98,7 +96,7 @@ bool readConfigScan(void){
 				}
 				if(isVariable("keycode", &element)){
 					pushWhitespace(&element);
-					getKey(&element, &keycode, &masks);
+					getKey(&element);
 					if(isVariable("restart", &element)){
 						if(!(hasReadVariable & RestartPosition)){
 							length = 7;
@@ -133,15 +131,15 @@ bool readConfigKeysCommands(Shortcut *const shortcut, char *const *const command
 	bool value = 0;
 	FILE *const file = getConfigFile();
 	if(file){
+		unsigned int maxLinesCount = DefaultLinesCount;
+		unsigned int element;
+		uint8_t hasReadVariable = NoPositions;
 		unsigned int currentShortcut;
 		for(currentShortcut = 0; currentShortcut < shortcutAmount; ++currentShortcut){
 			shortcut[currentShortcut].keycode = AnyKey;
 			shortcut[currentShortcut].masks = None;
 			command[currentShortcut][0] = '\0';
 		}
-		unsigned int maxLinesCount = DefaultLinesCount;
-		unsigned int element;
-		uint8_t hasReadVariable = NoPositions;
 		currentShortcut = 0;
 		for(unsigned int currentLine = 1; currentLine <= maxLinesCount; ++currentLine){
 			if(!getLine(file)){
@@ -163,7 +161,7 @@ bool readConfigKeysCommands(Shortcut *const shortcut, char *const *const command
 				}
 				if(isVariable("keycode", &element)){
 					pushWhitespace(&element);
-					getKey(&element, &shortcut[currentShortcut].keycode, &shortcut[currentShortcut].masks);
+					shortcut[currentShortcut] = getKey(&element);
 					if(isVariable("restart", &element)){
 						if(!(hasReadVariable & RestartPosition)){
 							command[currentShortcut][0] = 'r';
@@ -502,40 +500,41 @@ static unsigned int getQuotedString(char *const string, unsigned int *const elem
 	*element = dereferencedElement;
 	return currentCharacter;
 }
-static bool getKey(unsigned int *const element, unsigned int *const keycode, uint16_t *const masks){
+static Shortcut getKey(unsigned int *const element){
 	unsigned int dereferencedElement = *element;
-	unsigned int dereferencedKeycode = AnyKey;
-	uint16_t dereferencedMasks = None;
-	bool value = 0;
+	Shortcut shortcut = {
+		.keycode = AnyKey,
+		.masks = None
+	};
 	bool lookingForValue = 1;
 	while(line[dereferencedElement]){
 		pushWhitespace(&dereferencedElement);
 		if(lookingForValue){
 			if(line[dereferencedElement] >= '0' && line[dereferencedElement] <= '9'){
 				do{
-					dereferencedKeycode *= 10;
-					dereferencedKeycode += line[dereferencedElement];
-					dereferencedKeycode -= 48;
+					shortcut.keycode *= 10;
+					shortcut.keycode += line[dereferencedElement];
+					shortcut.keycode -= 48;
 					++dereferencedElement;
 				}while(line[dereferencedElement] >= '0' && line[dereferencedElement] <= '9');
 			}else if(isVariable("AnyModifier", &dereferencedElement)){
-				dereferencedMasks |= AnyModifier;
+				shortcut.masks |= AnyModifier;
 			}else if(isVariable("Shift", &dereferencedElement)){
-				dereferencedMasks |= ShiftMask;
+				shortcut.masks |= ShiftMask;
 			}else if(isVariable("Lock", &dereferencedElement)){
-				dereferencedMasks |= LockMask;
+				shortcut.masks |= LockMask;
 			}else if(isVariable("Control", &dereferencedElement)){
-				dereferencedMasks |= ControlMask;
+				shortcut.masks |= ControlMask;
 			}else if(isVariable("Mod1", &dereferencedElement)){
-				dereferencedMasks |= Mod1Mask;
+				shortcut.masks |= Mod1Mask;
 			}else if(isVariable("Mod2", &dereferencedElement)){
-				dereferencedMasks |= Mod2Mask;
-			}else if(isVariable("Mod3", &dereferencedElement)){
-				dereferencedMasks |= Mod3Mask;
+				shortcut.masks |= Mod2Mask;
+		 	}else if(isVariable("Mod3", &dereferencedElement)){
+				shortcut.masks |= Mod3Mask;
 			}else if(isVariable("Mod4", &dereferencedElement)){
-				dereferencedMasks |= Mod4Mask;
+				shortcut.masks |= Mod4Mask;
 			}else if(isVariable("Mod5", &dereferencedElement)){
-				dereferencedMasks |= Mod5Mask;
+				shortcut.masks |= Mod5Mask;
 			}else{
 				break;
 			}
@@ -549,13 +548,10 @@ static bool getKey(unsigned int *const element, unsigned int *const keycode, uin
 			}
 		}
 	}
-	if(dereferencedKeycode != AnyKey){
+	if(shortcut.keycode != AnyKey){
 		*element = dereferencedElement;
-		*keycode = dereferencedKeycode;
-		*masks = dereferencedMasks;
-		value = 1;
 	}
-	return value;
+	return shortcut;
 }
 static void printLineError(const unsigned int currentLine){
 	unsigned int element = 0;

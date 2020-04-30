@@ -23,7 +23,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. -->
 
 # microrun
-Keypress listener and startup command runner for the X Window System.
+Keypress listener and startup command runner for the X Window System
 
 
 
@@ -66,6 +66,6 @@ microrun: usage: microrun [parameters] or microrun [parameter] [--help]
 #### $ microrun --config --help
 <pre>
 microrun: usage: microrun --config "/path/to/file"
-    # if the specified file doesn't exist, it will be created and it will contain the hardcoded default configuration
-    # environment variables may be used
+    if the specified file doesn't exist, it will be created
+    and it will contain the hardcoded default configuration
 </pre>
