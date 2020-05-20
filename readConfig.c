@@ -278,9 +278,7 @@ static void pushWhitespace(unsigned int *const element){
 	while(line[dereferencedElement] && (line[dereferencedElement] == ' ' || line[dereferencedElement] == '	')){
 		++dereferencedElement;
 	}
-	if(dereferencedElement > *element){
-		*element = dereferencedElement;
-	}
+	*element = dereferencedElement;
 	return;
 }
 static bool isVariable(const char *const variable, unsigned int *const element){
