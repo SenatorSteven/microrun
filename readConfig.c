@@ -58,10 +58,10 @@ static void printLineError(const unsigned int currentLine);
 
 bool readConfigScan(void){
 	bool value = 0;
+	maxCommandLength = 0;
+	shortcutAmount = 0;
 	FILE *const file = getConfigFile();
 	if(file){
-		maxCommandLength = 0;
-		shortcutAmount = 0;
 		unsigned int maxLinesCount = DefaultLinesCount;
 		unsigned int element;
 		uint8_t hasReadVariable = NoPositions;
@@ -129,18 +129,18 @@ bool readConfigScan(void){
 }
 bool readConfigKeysCommands(Shortcut *const shortcut, char *const *const command){
 	bool value = 0;
+	unsigned int currentShortcut;
+	for(currentShortcut = 0; currentShortcut < shortcutAmount; ++currentShortcut){
+		shortcut[currentShortcut].keycode = AnyKey;
+		shortcut[currentShortcut].masks = None;
+		command[currentShortcut][0] = '\0';
+	}
 	FILE *const file = getConfigFile();
 	if(file){
+		currentShortcut = 0;
 		unsigned int maxLinesCount = DefaultLinesCount;
 		unsigned int element;
 		uint8_t hasReadVariable = NoPositions;
-		unsigned int currentShortcut;
-		for(currentShortcut = 0; currentShortcut < shortcutAmount; ++currentShortcut){
-			shortcut[currentShortcut].keycode = AnyKey;
-			shortcut[currentShortcut].masks = None;
-			command[currentShortcut][0] = '\0';
-		}
-		currentShortcut = 0;
 		for(unsigned int currentLine = 1; currentLine <= maxLinesCount; ++currentLine){
 			if(!getLine(file)){
 				break;
