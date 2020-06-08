@@ -275,8 +275,10 @@ static bool getLine(FILE *const file){
 }
 static void pushWhitespace(unsigned int *const element){
 	unsigned int dereferencedElement = *element;
-	while(line[dereferencedElement] && (line[dereferencedElement] == ' ' || line[dereferencedElement] == '	')){
+	char l = line[dereferencedElement];
+	while(l && (l == ' ' || l == '\t')){
 		++dereferencedElement;
+		l = line[dereferencedElement];
 	}
 	*element = dereferencedElement;
 	return;
@@ -285,27 +287,19 @@ static bool isVariable(const char *const variable, unsigned int *const element){
 	unsigned int dereferencedElement = *element;
 	bool value = 0;
 	unsigned int currentCharacter = 0;
-	while(variable[currentCharacter] && line[dereferencedElement]){
-		if(variable[currentCharacter] >= 'A' && variable[currentCharacter] <= 'Z'){
-			if(!(line[dereferencedElement] == variable[currentCharacter] || line[dereferencedElement] == variable[currentCharacter] + 32)){
-				currentCharacter = 0;
-				break;
-			}
-		}else if(variable[currentCharacter] >= 'a' && variable[currentCharacter] <= 'z'){
-			if(!(line[dereferencedElement] == variable[currentCharacter] || line[dereferencedElement] == variable[currentCharacter] - 32)){
-				currentCharacter = 0;
-				break;
-			}
-		}else{
-			if(!(line[dereferencedElement] == variable[currentCharacter])){
-				currentCharacter = 0;
-				break;
-			}
+	char v = *variable;
+	char l = line[dereferencedElement];
+	while(v && l){
+		if((v >= 'A' && v <= 'Z' && l != v && l != v + 32) || (v >= 'a' && v <= 'z' && l != v && l != v - 32) || l != v){
+			currentCharacter = 0;
+			break;
 		}
-		++dereferencedElement;
 		++currentCharacter;
+		++dereferencedElement;
+		v = variable[currentCharacter];
+		l = line[dereferencedElement];
 	}
-	if(currentCharacter != 0){
+	if(currentCharacter){
 		*element = dereferencedElement;
 		value = 1;
 	}
