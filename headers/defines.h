@@ -36,9 +36,10 @@ SOFTWARE. */
 #define ExitMode /*---------------*/ 2
 
 typedef uint8_t bool;
+typedef uint8_t Mode;
 
 typedef struct{
-	unsigned int keycode;
+	uint16_t keycode;
 	uint16_t masks;
 } Shortcut;
 
