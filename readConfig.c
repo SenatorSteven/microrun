@@ -562,10 +562,10 @@ static Shortcut getShortcut(unsigned int *const element){
 static void printLineError(const unsigned int currentLine){
 	unsigned int element = 0;
 	fprintf(stderr, "%s: line %u: \"", programName, currentLine);
-	do{
+	while(line[element]){
 		fprintf(stderr, "%c", line[element]);
 		++element;
-	}while(line[element]);
+	}
 	fprintf(stderr, "\" not recognized as an internal variable\n");
 	return;
 }
