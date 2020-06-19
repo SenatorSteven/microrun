@@ -31,7 +31,7 @@ SOFTWARE. */
 #include "headers/eventLoop.h"
 
 extern const char *programName;
-extern uint8_t mode;
+extern Mode mode;
 extern Display *display;
 extern unsigned int shortcutAmount;
 
@@ -40,17 +40,20 @@ int main(const int argumentCount, const char *const *const argumentVector){
 		for(;;){
 			mode = ContinueMode;
 			if((display = XOpenDisplay(NULL))){
-				readConfigScan();
-				if(shortcutAmount){
-					eventLoop();
+				if(readConfigScan()){
+					if(shortcutAmount){
+						eventLoop();
+					}else{
+						fprintf(stderr, "%s: no shortcuts specified\n", programName);
+						mode = ExitMode;
+					}
 				}else{
-					fprintf(stderr, "%s: no shortcut specified\n", programName);
 					mode = ExitMode;
 				}
 				XCloseDisplay(display);
 			}else{
 				fprintf(stderr, "%s: could not connect to server\n", programName);
-				mode = ExitMode;
+				break;
 			}
 			if(mode == ExitMode){
 				break;

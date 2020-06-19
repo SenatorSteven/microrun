@@ -28,16 +28,16 @@ SOFTWARE. */
 #include <X11/X.h>
 #include "headers/defines.h"
 
-#define NoPositions /*-------------*/ 0
-#define LinesPosition /*-----------*/ (1 << 0)
-#define RestartPosition /*---------*/ (1 << 1)
-#define ExitPosition /*------------*/ (1 << 2)
+#define NoVariables /*-----------------*/ 0
+#define LinesVariable /*---------------*/ (1 << 0)
+#define RestartVariable /*-------------*/ (1 << 1)
+#define ExitVariable /*----------------*/ (1 << 2)
 
-#define NoOperation /*-------------*/ 0
-#define AdditionOperation /*-------*/ 1
-#define SubtractionOperation /*----*/ 2
-#define MultiplicationOperation /*-*/ 3
-#define DivisionOperation /*-------*/ 4
+#define NoMathOperation /*-------------*/ 0
+#define AdditionMathOperation /*-------*/ 1
+#define SubtractionMathOperation /*----*/ 2
+#define MultiplicationMathOperation /*-*/ 3
+#define DivisionMathOperation /*-------*/ 4
 
 extern const char *programName;
 extern const char *configPath;
@@ -45,15 +45,18 @@ extern char line[DefaultCharactersCount + 1];
 extern unsigned int maxCommandLength;
 extern unsigned int shortcutAmount;
 
+typedef uint8_t VariableList;
+typedef uint8_t MathOperation;
+
 static FILE *getConfigFile(void);
 static bool getLine(FILE *const file);
 static void pushWhitespace(unsigned int *const element);
 static bool isVariable(const char *const variable, unsigned int *const element);
-static unsigned int getUnsignedIntegerNumber(const unsigned int currentLine, unsigned int *const element);
-static int getIntegerNumber(unsigned int *const element);
+static unsigned int getUnsignedInteger(const unsigned int currentLine, unsigned int *const element);
+static int getInteger(unsigned int *const element);
 static unsigned int getQuotedStringLength(unsigned int *const element);
 static unsigned int getQuotedString(char *const string, unsigned int *const element);
-static Shortcut getKey(unsigned int *const element);
+static Shortcut getShortcut(unsigned int *const element);
 static void printLineError(const unsigned int currentLine);
 
 bool readConfigScan(void){
@@ -64,7 +67,7 @@ bool readConfigScan(void){
 	if(file){
 		unsigned int maxLinesCount = DefaultLinesCount;
 		unsigned int element;
-		uint8_t hasReadVariable = NoPositions;
+		VariableList hasReadVariable = NoVariables;
 		unsigned int startingPoint;
 		unsigned int length;
 		for(unsigned int currentLine = 1; currentLine <= maxLinesCount; ++currentLine){
@@ -74,13 +77,13 @@ bool readConfigScan(void){
 			element = 0;
 			pushWhitespace(&element);
 			if(!isVariable("#", &element)){
-				if(!(hasReadVariable & LinesPosition)){
+				if(!(hasReadVariable & LinesVariable)){
 					if(isVariable("lines", &element)){
 						pushWhitespace(&element);
 						if(isVariable("=", &element)){
 							pushWhitespace(&element);
-							maxLinesCount = getUnsignedIntegerNumber(currentLine, &element);
-							hasReadVariable |= LinesPosition;
+							maxLinesCount = getUnsignedInteger(currentLine, &element);
+							hasReadVariable |= LinesVariable;
 						}
 						continue;
 					}
@@ -96,14 +99,14 @@ bool readConfigScan(void){
 				}
 				if(isVariable("keycode", &element)){
 					pushWhitespace(&element);
-					getKey(&element);
+					getShortcut(&element);
 					if(isVariable("restart", &element)){
-						if(!(hasReadVariable & RestartPosition)){
+						if(!(hasReadVariable & RestartVariable)){
 							length = 7;
 							++shortcutAmount;
 						}
 					}else if(isVariable("exit", &element)){
-						if(!(hasReadVariable & ExitPosition)){
+						if(!(hasReadVariable & ExitVariable)){
 							length = 4;
 							++shortcutAmount;
 						}
@@ -133,14 +136,15 @@ bool readConfigKeysCommands(Shortcut *const shortcut, char *const *const command
 	for(currentShortcut = 0; currentShortcut < shortcutAmount; ++currentShortcut){
 		shortcut[currentShortcut].keycode = AnyKey;
 		shortcut[currentShortcut].masks = None;
-		command[currentShortcut][0] = '\0';
+		*command[currentShortcut] = '\0';
 	}
 	FILE *const file = getConfigFile();
 	if(file){
 		currentShortcut = 0;
 		unsigned int maxLinesCount = DefaultLinesCount;
 		unsigned int element;
-		uint8_t hasReadVariable = NoPositions;
+		VariableList hasReadVariable = NoVariables;
+		char *currentCommand;
 		for(unsigned int currentLine = 1; currentLine <= maxLinesCount; ++currentLine){
 			if(!getLine(file)){
 				break;
@@ -148,43 +152,46 @@ bool readConfigKeysCommands(Shortcut *const shortcut, char *const *const command
 			element = 0;
 			pushWhitespace(&element);
 			if(!isVariable("#", &element)){
-				if(!(hasReadVariable & LinesPosition)){
+				if(!(hasReadVariable & LinesVariable)){
 					if(isVariable("lines", &element)){
 						pushWhitespace(&element);
 						if(isVariable("=", &element)){
 							pushWhitespace(&element);
-							maxLinesCount = getUnsignedIntegerNumber(currentLine, &element);
-							hasReadVariable |= LinesPosition;
+							maxLinesCount = getUnsignedInteger(currentLine, &element);
+							hasReadVariable |= LinesVariable;
 						}
 						continue;
 					}
 				}
 				if(isVariable("keycode", &element)){
 					pushWhitespace(&element);
-					shortcut[currentShortcut] = getKey(&element);
+					shortcut[currentShortcut] = getShortcut(&element);
 					if(isVariable("restart", &element)){
-						if(!(hasReadVariable & RestartPosition)){
-							command[currentShortcut][0] = 'r';
-							command[currentShortcut][1] = 'e';
-							command[currentShortcut][2] = 's';
-							command[currentShortcut][3] = 't';
-							command[currentShortcut][4] = 'a';
-							command[currentShortcut][5] = 'r';
-							command[currentShortcut][6] = 't';
-							command[currentShortcut][7] = '\0';
+						if(!(hasReadVariable & RestartVariable)){
+							currentCommand = command[currentShortcut];
+							currentCommand[0] = 'r';
+							currentCommand[1] = 'e';
+							currentCommand[2] = 's';
+							currentCommand[3] = 't';
+							currentCommand[4] = 'a';
+							currentCommand[5] = 'r';
+							currentCommand[6] = 't';
+							currentCommand[7] = '\0';
 							++currentShortcut;
 						}
 					}else if(isVariable("exit", &element)){
-						if(!(hasReadVariable & ExitPosition)){
-							command[currentShortcut][0] = 'e';
-							command[currentShortcut][1] = 'x';
-							command[currentShortcut][2] = 'i';
-							command[currentShortcut][3] = 't';
-							command[currentShortcut][4] = '\0';
+						if(!(hasReadVariable & ExitVariable)){
+							currentCommand = command[currentShortcut];
+							currentCommand[0] = 'e';
+							currentCommand[1] = 'x';
+							currentCommand[2] = 'i';
+							currentCommand[3] = 't';
+							currentCommand[4] = '\0';
 							++currentShortcut;
 						}
 					}else{
-						command[currentShortcut][getQuotedString(command[currentShortcut], &element)] = '\0';
+						currentCommand = command[currentShortcut];
+						currentCommand[getQuotedString(currentCommand, &element)] = '\0';
 						++currentShortcut;
 					}
 					continue;
@@ -277,8 +284,7 @@ static void pushWhitespace(unsigned int *const element){
 	unsigned int dereferencedElement = *element;
 	char l = line[dereferencedElement];
 	while(l && (l == ' ' || l == '\t')){
-		++dereferencedElement;
-		l = line[dereferencedElement];
+		l = line[++dereferencedElement];
 	}
 	*element = dereferencedElement;
 	return;
@@ -287,17 +293,25 @@ static bool isVariable(const char *const variable, unsigned int *const element){
 	unsigned int dereferencedElement = *element;
 	bool value = 0;
 	unsigned int currentCharacter = 0;
-	char v = *variable;
 	char l = line[dereferencedElement];
-	while(v && l){
-		if((v >= 'A' && v <= 'Z' && l != v && l != v + 32) || (v >= 'a' && v <= 'z' && l != v && l != v - 32) || l != v){
+	char v = *variable;
+	while(l && v){
+		if(l >= 'A' && l <= 'Z'){
+			if(l != v && l != v - 32){
+				currentCharacter = 0;
+				break;
+			}
+		}else if(l >= 'a' && l <= 'z'){
+			if(l != v && l != v + 32){
+				currentCharacter = 0;
+				break;
+			}
+		}else if(l != v){
 			currentCharacter = 0;
 			break;
 		}
-		++currentCharacter;
-		++dereferencedElement;
-		v = variable[currentCharacter];
-		l = line[dereferencedElement];
+		l = line[++dereferencedElement];
+		v = variable[++currentCharacter];
 	}
 	if(currentCharacter){
 		*element = dereferencedElement;
@@ -305,21 +319,21 @@ static bool isVariable(const char *const variable, unsigned int *const element){
 	}
 	return value;
 }
-static unsigned int getUnsignedIntegerNumber(const unsigned int currentLine, unsigned int *const element){
-	unsigned int number = getIntegerNumber(element);
+static unsigned int getUnsignedInteger(const unsigned int currentLine, unsigned int *const element){
+	unsigned int number = getInteger(element);
 	if((int)number < 0){
 		fprintf(stderr, "%s: line %u: %i is not an unsigned integer\n", programName, currentLine, (int)number);
 		number = 0;
 	}
 	return number;
 }
-static int getIntegerNumber(unsigned int *const element){
+static int getInteger(unsigned int *const element){
 	unsigned int dereferencedElement = *element;
 	int number = 0;
 	int numberRead = 0;
 	int numberOperatedOn = 0;
-	uint8_t operation = NoOperation;
-	uint8_t lastOperation = NoOperation;
+	MathOperation operation = NoMathOperation;
+	MathOperation lastOperation = NoMathOperation;
 	while(line[dereferencedElement]){
 		pushWhitespace(&dereferencedElement);
 		if(line[dereferencedElement] >= '0' && line[dereferencedElement] <= '9'){
@@ -329,7 +343,7 @@ static int getIntegerNumber(unsigned int *const element){
 			++dereferencedElement;
 		}else if(line[dereferencedElement] == '('){
 			++dereferencedElement;
-			numberRead = getIntegerNumber(&dereferencedElement);
+			numberRead = getInteger(&dereferencedElement);
 		}else if(line[dereferencedElement] == ')'){
 			++dereferencedElement;
 			break;
@@ -339,14 +353,14 @@ static int getIntegerNumber(unsigned int *const element){
 					break;
 				}
 			}
-			if(operation == AdditionOperation){
+			if(operation == AdditionMathOperation){
 				if(line[dereferencedElement] != '*' && line[dereferencedElement] != '/'){
 					if(numberOperatedOn == 0){
 						number += numberRead;
 					}else{
-						if(lastOperation == AdditionOperation){
+						if(lastOperation == AdditionMathOperation){
 							number += numberOperatedOn;
-						}else if(lastOperation == SubtractionOperation){
+						}else if(lastOperation == SubtractionMathOperation){
 							number -= numberOperatedOn;
 						}
 					}
@@ -354,14 +368,14 @@ static int getIntegerNumber(unsigned int *const element){
 					numberOperatedOn = numberRead;
 					lastOperation = operation;
 				}
-			}else if(operation == SubtractionOperation){
+			}else if(operation == SubtractionMathOperation){
 				if(line[dereferencedElement] != '*' && line[dereferencedElement] != '/'){
 					if(numberOperatedOn == 0){
 						number -= numberRead;
 					}else{
-						if(lastOperation == AdditionOperation){
+						if(lastOperation == AdditionMathOperation){
 							number += numberOperatedOn;
-						}else if(lastOperation == SubtractionOperation){
+						}else if(lastOperation == SubtractionMathOperation){
 							number -= numberOperatedOn;
 						}
 					}
@@ -369,30 +383,30 @@ static int getIntegerNumber(unsigned int *const element){
 					numberOperatedOn = numberRead;
 					lastOperation = operation;
 				}
-			}else if(operation == MultiplicationOperation){
+			}else if(operation == MultiplicationMathOperation){
 				if(numberOperatedOn == 0){
 					number *= numberRead;
 				}else{
 					numberOperatedOn *= numberRead;
 				}
 				if(line[dereferencedElement] == '+' || line[dereferencedElement] == '-'){
-					if(lastOperation == AdditionOperation){
+					if(lastOperation == AdditionMathOperation){
 						number += numberOperatedOn;
-					}else if(lastOperation == SubtractionOperation){
+					}else if(lastOperation == SubtractionMathOperation){
 						number -= numberOperatedOn;
 					}
 					numberOperatedOn = 0;
 				}
-			}else if(operation == DivisionOperation){
+			}else if(operation == DivisionMathOperation){
 				if(numberOperatedOn == 0){
 					number /= numberRead;
 				}else{
 					numberOperatedOn /= numberRead;
 				}
 				if(line[dereferencedElement] == '+' || line[dereferencedElement] == '-'){
-					if(lastOperation == AdditionOperation){
+					if(lastOperation == AdditionMathOperation){
 						number += numberOperatedOn;
-					}else if(lastOperation == SubtractionOperation){
+					}else if(lastOperation == SubtractionMathOperation){
 						number -= numberOperatedOn;
 					}
 					numberOperatedOn = 0;
@@ -403,13 +417,13 @@ static int getIntegerNumber(unsigned int *const element){
 				}
 			}
 			if(line[dereferencedElement] == '+'){
-				operation = AdditionOperation;
+				operation = AdditionMathOperation;
 			}else if(line[dereferencedElement] == '-'){
-				operation = SubtractionOperation;
+				operation = SubtractionMathOperation;
 			}else if(line[dereferencedElement] == '*'){
-				operation = MultiplicationOperation;
+				operation = MultiplicationMathOperation;
 			}else if(line[dereferencedElement] == '/'){
-				operation = DivisionOperation;
+				operation = DivisionMathOperation;
 			}
 			numberRead = 0;
 			++dereferencedElement;
@@ -417,44 +431,44 @@ static int getIntegerNumber(unsigned int *const element){
 			break;
 		}
 	}
-	if(operation == AdditionOperation){
+	if(operation == AdditionMathOperation){
 		if(numberOperatedOn > 0){
-			if(lastOperation == AdditionOperation){
+			if(lastOperation == AdditionMathOperation){
 				number += numberOperatedOn;
-			}else if(lastOperation == SubtractionOperation){
+			}else if(lastOperation == SubtractionMathOperation){
 				number -= numberOperatedOn;
 			}
 		}
 		number += numberRead;
-	}else if(operation == SubtractionOperation){
+	}else if(operation == SubtractionMathOperation){
 		if(numberOperatedOn > 0){
-			if(lastOperation == AdditionOperation){
+			if(lastOperation == AdditionMathOperation){
 				number += numberOperatedOn;
-			}else if(lastOperation == SubtractionOperation){
+			}else if(lastOperation == SubtractionMathOperation){
 				number -= numberOperatedOn;
 			}
 		}
 		number -= numberRead;
-	}else if(operation == MultiplicationOperation){
+	}else if(operation == MultiplicationMathOperation){
 		if(numberOperatedOn == 0){
 			number *= numberRead;
 		}else{
 			numberOperatedOn *= numberRead;
-			if(lastOperation == AdditionOperation){
+			if(lastOperation == AdditionMathOperation){
 				number += numberOperatedOn;
-			}else if(lastOperation == SubtractionOperation){
+			}else if(lastOperation == SubtractionMathOperation){
 				number -= numberOperatedOn;
 			}
 		}
-	}else if(operation == DivisionOperation){
+	}else if(operation == DivisionMathOperation){
 		if(number > 0 || numberOperatedOn > 0){
 			if(numberOperatedOn == 0){
 				number /= numberRead;
 			}else{
 				numberOperatedOn /= numberRead;
-				if(lastOperation == AdditionOperation){
+				if(lastOperation == AdditionMathOperation){
 					number += numberOperatedOn;
-				}else if(lastOperation == SubtractionOperation){
+				}else if(lastOperation == SubtractionMathOperation){
 					number -= numberOperatedOn;
 				}
 			}
@@ -492,7 +506,7 @@ static unsigned int getQuotedString(char *const string, unsigned int *const elem
 	*element = dereferencedElement;
 	return currentCharacter;
 }
-static Shortcut getKey(unsigned int *const element){
+static Shortcut getShortcut(unsigned int *const element){
 	unsigned int dereferencedElement = *element;
 	Shortcut shortcut = {
 		.keycode = AnyKey,
@@ -548,10 +562,10 @@ static Shortcut getKey(unsigned int *const element){
 static void printLineError(const unsigned int currentLine){
 	unsigned int element = 0;
 	fprintf(stderr, "%s: line %u: \"", programName, currentLine);
-	while(line[element]){
+	do{
 		fprintf(stderr, "%c", line[element]);
 		++element;
-	}
+	}while(line[element]);
 	fprintf(stderr, "\" not recognized as an internal variable\n");
 	return;
 }

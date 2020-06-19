@@ -28,7 +28,7 @@ SOFTWARE. */
 
 const char *programName;
 const char *configPath;
-uint8_t mode;
+Mode mode;
 Display *display;
 char line[DefaultCharactersCount + 1];
 unsigned int maxCommandLength;

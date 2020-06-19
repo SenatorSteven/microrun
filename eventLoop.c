@@ -23,20 +23,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <X11/Xlib.h>
 #include "headers/defines.h"
 #include "headers/readConfig.h"
 
 extern const char *programName;
-extern uint8_t mode;
+extern Mode mode;
 extern Display *display;
 extern unsigned int maxCommandLength;
 extern unsigned int shortcutAmount;
 
-static void grabKeys(Shortcut *const shortcut);
+static void grabKeys(const Shortcut *const s);
 static bool isCommand(const char *const command, const char *const vector);
-static void ungrabKeys(Shortcut *const shortcut);
+static void ungrabKeys(const Shortcut *const s);
 
 void eventLoop(void){
 	Shortcut shortcut[shortcutAmount];
@@ -45,8 +46,11 @@ void eventLoop(void){
 	for(unsigned int currentShortcut = 0; currentShortcut < shortcutAmount; ++currentShortcut){
 		command[currentShortcut] = _command[currentShortcut];
 	}
-	readConfigKeysCommands(shortcut, command);
-	grabKeys(shortcut);
+	if(readConfigKeysCommands(shortcut, command)){
+		grabKeys(shortcut);
+	}else{
+		fprintf(stderr, "%s: could not read shortcuts\n", programName);
+	}
 	XSelectInput(display, XDefaultRootWindow(display), KeyPressMask);
 	{
 		XEvent event;
@@ -78,34 +82,47 @@ void eventLoop(void){
 static bool isCommand(const char *const command, const char *const vector){
 	bool value = 0;
 	unsigned int element = 0;
-	char c = *command;
 	char v = *vector;
-	while(c || v){
-		if((v >= 'A' && v <= 'Z' && v != c && v != c + 32) || (v >= 'a' && v <= 'z' && v != c && v != c - 32) || v != c){
+	char c = *command;
+	while(v || c){
+		if(v >= 'A' && v <= 'Z'){
+			if(v != c && v != c - 32){
+				element = 0;
+				break;
+			}
+		}else if(v >= 'a' && v <= 'z'){
+			if(v != c && v != c + 32){
+				element = 0;
+				break;
+			}
+		}else if(v != c){
 			element = 0;
 			break;
 		}
 		++element;
-		c = command[element];
 		v = vector[element];
+		c = command[element];
 	}
 	if(element){
 		value = 1;
 	}
 	return value;
 }
-static void grabKeys(Shortcut *const shortcut){
+static void grabKeys(const Shortcut *const s){
 	for(unsigned int currentShortcut = 0; currentShortcut < shortcutAmount; ++currentShortcut){
-		if(shortcut[currentShortcut].keycode != AnyKey){
-			XGrabKey(display, shortcut[currentShortcut].keycode, shortcut[currentShortcut].masks, XDefaultRootWindow(display), True, GrabModeAsync, GrabModeAsync);
+		if(s[currentShortcut].keycode != AnyKey){
+			XGrabKey(display, s[currentShortcut].keycode, s[currentShortcut].masks, XDefaultRootWindow(display), True, GrabModeAsync, GrabModeAsync);
 		}
 	}
 	XSync(display, False);
+	return;
 }
-static void ungrabKeys(Shortcut *const shortcut){
+static void ungrabKeys(const Shortcut *const s){
 	for(unsigned int currentShortcut = 0; currentShortcut < shortcutAmount; ++currentShortcut){
-		if(shortcut[currentShortcut].keycode != AnyKey){
-			XUngrabKey(display, shortcut[currentShortcut].keycode, shortcut[currentShortcut].masks, XDefaultRootWindow(display));
+		if(s[currentShortcut].keycode != AnyKey){
+			XUngrabKey(display, s[currentShortcut].keycode, s[currentShortcut].masks, XDefaultRootWindow(display));
 		}
 	}
+	XSync(display, False);
+	return;
 }

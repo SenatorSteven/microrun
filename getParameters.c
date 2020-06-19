@@ -27,46 +27,48 @@ SOFTWARE. */
 #include <stdio.h>
 #include "headers/defines.h"
 
-#define NoPositions /*----*/ 0
-#define ConfigPosition /*-*/ (1 << 0)
-#define HelpPosition /*---*/ (1 << 1)
-#define ExitPosition /*---*/ (1 << 2)
+#define NoParameters /*----*/ 0
+#define ConfigParameter /*-*/ (1 << 0)
+#define HelpParameter /*---*/ (1 << 1)
+#define ExitParameter /*---*/ (1 << 2)
 
 extern const char *programName;
 extern const char *configPath;
 
-static bool isArgument(const char *const argument, const char *const vector);
+typedef uint8_t ParameterList;
 
-bool getParameters(const unsigned int argumentCount, const char *const *const argumentVector){
+static bool isParameter(const char *const parameter, const char *const vector);
+
+bool getParameters(const unsigned int parameterCount, const char *const *const parameterVector){
 	bool value = 0;
-	programName = argumentVector[0];
-	if(argumentCount > 1){
-		const char *currentArgumentVector;
-		uint8_t hasReadVariable = NoPositions;
+	programName = *parameterVector;
+	if(parameterCount > 1){
+		const char *currentParameterVector;
+		ParameterList hasReadParameter = NoParameters;
 		DIR *dir;
 		FILE *file;
-		for(unsigned int currentArgument = 1; currentArgument < argumentCount; ++currentArgument){
-			currentArgumentVector = argumentVector[currentArgument];
-			if(!(hasReadVariable & ConfigPosition)){
-				if(isArgument("-c", currentArgumentVector) || isArgument("--config", currentArgumentVector)){
-					hasReadVariable |= ConfigPosition;
-					if(++currentArgument < argumentCount){
-						currentArgumentVector = argumentVector[currentArgument];
-						if(isArgument("-h", currentArgumentVector) || isArgument("--help", currentArgumentVector)){
+		for(unsigned int currentParameter = 1; currentParameter < parameterCount; ++currentParameter){
+			currentParameterVector = parameterVector[currentParameter];
+			if(!(hasReadParameter & ConfigParameter)){
+				if(isParameter("-c", currentParameterVector) || isParameter("--config", currentParameterVector)){
+					hasReadParameter |= ConfigParameter;
+					if(++currentParameter < parameterCount){
+						currentParameterVector = parameterVector[currentParameter];
+						if(isParameter("-h", currentParameterVector) || isParameter("--help", currentParameterVector)){
 							fprintf(stdout, "%s: usage: %s --config \"/path/to/file\"\n", programName, programName);
 							fprintf(stdout, "%sif the specified file doesn't exist, it will be created\n%sand it will contain the hardcoded default configuration\n", Tab, Tab);
-							hasReadVariable |= HelpPosition;
+							hasReadParameter |= HelpParameter;
 							break;
-						}else if(isArgument("-c", currentArgumentVector) || isArgument("--config", currentArgumentVector)){
+						}else if(isParameter("-c", currentParameterVector) || isParameter("--config", currentParameterVector)){
 							fprintf(stderr, "%s: no config value specified\n", programName);
-							hasReadVariable |= ExitPosition;
+							hasReadParameter |= ExitParameter;
 							break;
 						}else{
-							configPath = currentArgumentVector;
+							configPath = currentParameterVector;
 							if((dir = opendir(configPath))){
 								closedir(dir);
 								fprintf(stderr, "%s: \"%s\" config value is directory\n", programName, configPath);
-								hasReadVariable |= ExitPosition;
+								hasReadParameter |= ExitParameter;
 								break;
 							}else if((file = fopen(configPath, "r"))){
 								fclose(file);
@@ -77,34 +79,34 @@ bool getParameters(const unsigned int argumentCount, const char *const *const ar
 								continue;
 							}else{
 								fprintf(stderr, "%s: could not create config file\n", programName);
-								hasReadVariable |= ExitPosition;
+								hasReadParameter |= ExitParameter;
 								break;
 							}
 						}
 					}else{
 						fprintf(stderr, "%s: no config value specified\n", programName);
-						hasReadVariable |= ExitPosition;
+						hasReadParameter |= ExitParameter;
 						break;
 					}
 				}
 			}
-			if(isArgument("-h", currentArgumentVector) || isArgument("--help", currentArgumentVector)){
+			if(isParameter("-h", currentParameterVector) || isParameter("--help", currentParameterVector)){
 				fprintf(stdout, "%s: usage: %s [parameters] or %s [parameter] [--help]\n", programName, programName, programName);
 				fprintf(stdout, "%s[-h], [--help]  %sdisplay this message\n", Tab, Tab);
 				fprintf(stdout, "%s[-c], [--config]%sspecify path to config, necessary\n", Tab, Tab);
-				hasReadVariable |= HelpPosition;
+				hasReadParameter |= HelpParameter;
 				break;
-			}else if(isArgument("-c", currentArgumentVector) || isArgument("--config", currentArgumentVector)){
+			}else if(isParameter("-c", currentParameterVector) || isParameter("--config", currentParameterVector)){
 				fprintf(stderr, "%s: the config parameter has already been specified\n", programName);
 			}else{
-				fprintf(stderr, "%s: \"%s\" is not recognized as program parameter, check help? [-h]\n", programName, currentArgumentVector);
+				fprintf(stderr, "%s: \"%s\" is not recognized as program parameter, check help? [-h]\n", programName, currentParameterVector);
 			}
-			hasReadVariable |= ExitPosition;
+			hasReadParameter |= ExitParameter;
 			break;
 		}
-		if(!(hasReadVariable & HelpPosition)){
-			if(hasReadVariable & ConfigPosition){
-				if(!(hasReadVariable & ExitPosition)){
+		if(!(hasReadParameter & HelpParameter)){
+			if(hasReadParameter & ConfigParameter){
+				if(!(hasReadParameter & ExitParameter)){
 					value = 1;
 				}
 			}else{
@@ -116,18 +118,28 @@ bool getParameters(const unsigned int argumentCount, const char *const *const ar
 	}
 	return value;
 }
-static bool isArgument(const char *const argument, const char *const vector){
+static bool isParameter(const char *const parameter, const char *const vector){
 	bool value = 0;
 	unsigned int element = 0;
-	char a = argument[element];
-	char v = vector[element];
-	while(a || v){
-		if((v >= 'A' && v <= 'Z' && v != a && v != a + 32) || (v >= 'a' && v <= 'z' && v != a && v != a - 32) || v != a){
+	char p = *parameter;
+	char v = *vector;
+	while(p || v){
+		if(v >= 'A' && v <= 'Z'){
+			if(v != p && v != p - 32){
+				element = 0;
+				break;
+			}
+		}else if(v >= 'a' && v <= 'z'){
+			if(v != p && v != p + 32){
+				element = 0;
+				break;
+			}
+		}else if(v != p){
 			element = 0;
 			break;
 		}
 		++element;
-		a = argument[element];
+		p = parameter[element];
 		v = vector[element];
 	}
 	if(element){
