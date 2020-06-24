@@ -130,12 +130,12 @@ bool readConfigScan(void){
 	}
 	return value;
 }
-bool readConfigKeysCommands(Shortcut *const shortcut, char *const *const command){
+bool readConfigKeysCommands(Shortcut *const s, char *const *const command){
 	bool value = 0;
 	unsigned int currentShortcut;
 	for(currentShortcut = 0; currentShortcut < shortcutAmount; ++currentShortcut){
-		shortcut[currentShortcut].keycode = AnyKey;
-		shortcut[currentShortcut].masks = None;
+		s[currentShortcut].keycode = AnyKey;
+		s[currentShortcut].masks = None;
 		*command[currentShortcut] = '\0';
 	}
 	FILE *const file = getConfigFile();
@@ -165,7 +165,7 @@ bool readConfigKeysCommands(Shortcut *const shortcut, char *const *const command
 				}
 				if(isVariable("keycode", &element)){
 					pushWhitespace(&element);
-					shortcut[currentShortcut] = getShortcut(&element);
+					s[currentShortcut] = getShortcut(&element);
 					if(isVariable("restart", &element)){
 						if(!(hasReadVariable & RestartVariable)){
 							currentCommand = command[currentShortcut];
