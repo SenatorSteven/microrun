@@ -26,6 +26,6 @@ SOFTWARE. */
 #define READCONFIG_H
 
 bool readConfigScan(void);
-bool readConfigKeysCommands(Shortcut *const shortcut, char *const *const command);
+bool readConfigKeysCommands(Shortcut *const s, char *const *const command);
 
 #endif
