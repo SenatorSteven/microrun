@@ -40,6 +40,7 @@ static bool isCommand(const char *const command, const char *const vector);
 static void ungrabKeys(const Shortcut *const s);
 
 void eventLoop(void){
+	XSelectInput(display, XDefaultRootWindow(display), KeyPressMask);
 	Shortcut shortcut[shortcutAmount];
 	char _command[shortcutAmount][maxCommandLength + 1];
 	char *command[shortcutAmount];
@@ -51,7 +52,6 @@ void eventLoop(void){
 	}else{
 		fprintf(stderr, "%s: could not read shortcuts\n", programName);
 	}
-	XSelectInput(display, XDefaultRootWindow(display), KeyPressMask);
 	{
 		XEvent event;
 		unsigned int currentShortcut;

@@ -68,7 +68,7 @@ bool readConfigScan(void){
 		unsigned int maxLinesCount = DefaultLinesCount;
 		unsigned int element;
 		VariableList hasReadVariable = NoVariables;
-		unsigned int startingPoint;
+		unsigned int e;
 		unsigned int length;
 		for(unsigned int currentLine = 1; currentLine <= maxLinesCount; ++currentLine){
 			if(!getLine(file)){
@@ -90,9 +90,9 @@ bool readConfigScan(void){
 				}
 				if(isVariable("onStart", &element)){
 					pushWhitespace(&element);
-					startingPoint = element;
+					e = element;
 					char command[getQuotedStringLength(&element) + 1];
-					element = startingPoint;
+					element = e;
 					command[getQuotedString(command, &element)] = '\0';
 					system(command);
 					continue;
@@ -281,19 +281,19 @@ static bool getLine(FILE *const file){
 	return value;
 }
 static void pushWhitespace(unsigned int *const element){
-	unsigned int dereferencedElement = *element;
-	char l = line[dereferencedElement];
+	unsigned int e = *element;
+	char l = line[e];
 	while(l && (l == ' ' || l == '\t')){
-		l = line[++dereferencedElement];
+		l = line[++e];
 	}
-	*element = dereferencedElement;
+	*element = e;
 	return;
 }
 static bool isVariable(const char *const variable, unsigned int *const element){
-	unsigned int dereferencedElement = *element;
 	bool value = 0;
+	unsigned int e = *element;
 	unsigned int currentCharacter = 0;
-	char l = line[dereferencedElement];
+	char l = line[e];
 	char v = *variable;
 	while(l && v){
 		if(l >= 'A' && l <= 'Z'){
@@ -310,11 +310,11 @@ static bool isVariable(const char *const variable, unsigned int *const element){
 			currentCharacter = 0;
 			break;
 		}
-		l = line[++dereferencedElement];
+		l = line[++e];
 		v = variable[++currentCharacter];
 	}
 	if(currentCharacter){
-		*element = dereferencedElement;
+		*element = e;
 		value = 1;
 	}
 	return value;
@@ -328,33 +328,33 @@ static unsigned int getUnsignedInteger(const unsigned int currentLine, unsigned 
 	return number;
 }
 static int getInteger(unsigned int *const element){
-	unsigned int dereferencedElement = *element;
 	int number = 0;
+	unsigned int e = *element;
 	int numberRead = 0;
 	int numberOperatedOn = 0;
 	MathOperation operation = NoMathOperation;
 	MathOperation lastOperation = NoMathOperation;
-	while(line[dereferencedElement]){
-		pushWhitespace(&dereferencedElement);
-		if(line[dereferencedElement] >= '0' && line[dereferencedElement] <= '9'){
+	while(line[e]){
+		pushWhitespace(&e);
+		if(line[e] >= '0' && line[e] <= '9'){
 			numberRead *= 10;
-			numberRead += line[dereferencedElement];
+			numberRead += line[e];
 			numberRead -= 48;
-			++dereferencedElement;
-		}else if(line[dereferencedElement] == '('){
-			++dereferencedElement;
-			numberRead = getInteger(&dereferencedElement);
-		}else if(line[dereferencedElement] == ')'){
-			++dereferencedElement;
+			++e;
+		}else if(line[e] == '('){
+			++e;
+			numberRead = getInteger(&e);
+		}else if(line[e] == ')'){
+			++e;
 			break;
-		}else if(line[dereferencedElement] == '+' || line[dereferencedElement] == '-' || line[dereferencedElement] == '*' || line[dereferencedElement] == '/'){
+		}else if(line[e] == '+' || line[e] == '-' || line[e] == '*' || line[e] == '/'){
 			if(number == 0 && numberRead == 0){
-				if(line[dereferencedElement] == '/'){
+				if(line[e] == '/'){
 					break;
 				}
 			}
 			if(operation == AdditionMathOperation){
-				if(line[dereferencedElement] != '*' && line[dereferencedElement] != '/'){
+				if(line[e] != '*' && line[e] != '/'){
 					if(numberOperatedOn == 0){
 						number += numberRead;
 					}else{
@@ -369,7 +369,7 @@ static int getInteger(unsigned int *const element){
 					lastOperation = operation;
 				}
 			}else if(operation == SubtractionMathOperation){
-				if(line[dereferencedElement] != '*' && line[dereferencedElement] != '/'){
+				if(line[e] != '*' && line[e] != '/'){
 					if(numberOperatedOn == 0){
 						number -= numberRead;
 					}else{
@@ -389,7 +389,7 @@ static int getInteger(unsigned int *const element){
 				}else{
 					numberOperatedOn *= numberRead;
 				}
-				if(line[dereferencedElement] == '+' || line[dereferencedElement] == '-'){
+				if(line[e] == '+' || line[e] == '-'){
 					if(lastOperation == AdditionMathOperation){
 						number += numberOperatedOn;
 					}else if(lastOperation == SubtractionMathOperation){
@@ -403,7 +403,7 @@ static int getInteger(unsigned int *const element){
 				}else{
 					numberOperatedOn /= numberRead;
 				}
-				if(line[dereferencedElement] == '+' || line[dereferencedElement] == '-'){
+				if(line[e] == '+' || line[e] == '-'){
 					if(lastOperation == AdditionMathOperation){
 						number += numberOperatedOn;
 					}else if(lastOperation == SubtractionMathOperation){
@@ -416,17 +416,17 @@ static int getInteger(unsigned int *const element){
 					number = numberRead;
 				}
 			}
-			if(line[dereferencedElement] == '+'){
+			if(line[e] == '+'){
 				operation = AdditionMathOperation;
-			}else if(line[dereferencedElement] == '-'){
+			}else if(line[e] == '-'){
 				operation = SubtractionMathOperation;
-			}else if(line[dereferencedElement] == '*'){
+			}else if(line[e] == '*'){
 				operation = MultiplicationMathOperation;
-			}else if(line[dereferencedElement] == '/'){
+			}else if(line[e] == '/'){
 				operation = DivisionMathOperation;
 			}
 			numberRead = 0;
-			++dereferencedElement;
+			++e;
 		}else{
 			break;
 		}
@@ -478,76 +478,76 @@ static int getInteger(unsigned int *const element){
 			number = numberRead;
 		}
 	}
-	*element = dereferencedElement;
+	*element = e;
 	return number;
 }
 static unsigned int getQuotedStringLength(unsigned int *const element){
-	unsigned int dereferencedElement = *element;
 	unsigned int length = 0;
-	const char quotation = line[dereferencedElement];
-	++dereferencedElement;
-	while(line[dereferencedElement] != quotation && line[dereferencedElement]){
+	unsigned int e = *element;
+	const char quotation = line[e];
+	++e;
+	while(line[e] != quotation && line[e]){
 		++length;
-		++dereferencedElement;
+		++e;
 	}
-	*element = dereferencedElement;
+	*element = e;
 	return length;
 }
 static unsigned int getQuotedString(char *const string, unsigned int *const element){
-	unsigned int dereferencedElement = *element;
 	unsigned int currentCharacter = 0;
-	const char quotation = line[dereferencedElement];
-	++dereferencedElement;
-	while(line[dereferencedElement] != quotation && line[dereferencedElement]){
-		string[currentCharacter] = line[dereferencedElement];
+	unsigned int e = *element;
+	const char quotation = line[e];
+	++e;
+	while(line[e] != quotation && line[e]){
+		string[currentCharacter] = line[e];
 		++currentCharacter;
-		++dereferencedElement;
+		++e;
 	}
-	*element = dereferencedElement;
+	*element = e;
 	return currentCharacter;
 }
 static Shortcut getShortcut(unsigned int *const element){
-	unsigned int dereferencedElement = *element;
 	Shortcut shortcut = {
 		.keycode = AnyKey,
 		.masks = None
 	};
+	unsigned int e = *element;
 	bool lookingForValue = 1;
-	while(line[dereferencedElement]){
-		pushWhitespace(&dereferencedElement);
+	while(line[e]){
+		pushWhitespace(&e);
 		if(lookingForValue){
-			if(line[dereferencedElement] >= '0' && line[dereferencedElement] <= '9'){
+			if(line[e] >= '0' && line[e] <= '9'){
 				do{
 					shortcut.keycode *= 10;
-					shortcut.keycode += line[dereferencedElement];
+					shortcut.keycode += line[e];
 					shortcut.keycode -= 48;
-					++dereferencedElement;
-				}while(line[dereferencedElement] >= '0' && line[dereferencedElement] <= '9');
-			}else if(isVariable("AnyModifier", &dereferencedElement)){
+					++e;
+				}while(line[e] >= '0' && line[e] <= '9');
+			}else if(isVariable("AnyModifier", &e)){
 				shortcut.masks |= AnyModifier;
-			}else if(isVariable("Shift", &dereferencedElement)){
+			}else if(isVariable("Shift", &e)){
 				shortcut.masks |= ShiftMask;
-			}else if(isVariable("Lock", &dereferencedElement)){
+			}else if(isVariable("Lock", &e)){
 				shortcut.masks |= LockMask;
-			}else if(isVariable("Control", &dereferencedElement)){
+			}else if(isVariable("Control", &e)){
 				shortcut.masks |= ControlMask;
-			}else if(isVariable("Mod1", &dereferencedElement)){
+			}else if(isVariable("Mod1", &e)){
 				shortcut.masks |= Mod1Mask;
-			}else if(isVariable("Mod2", &dereferencedElement)){
+			}else if(isVariable("Mod2", &e)){
 				shortcut.masks |= Mod2Mask;
-		 	}else if(isVariable("Mod3", &dereferencedElement)){
+		 	}else if(isVariable("Mod3", &e)){
 				shortcut.masks |= Mod3Mask;
-			}else if(isVariable("Mod4", &dereferencedElement)){
+			}else if(isVariable("Mod4", &e)){
 				shortcut.masks |= Mod4Mask;
-			}else if(isVariable("Mod5", &dereferencedElement)){
+			}else if(isVariable("Mod5", &e)){
 				shortcut.masks |= Mod5Mask;
 			}else{
 				break;
 			}
 			lookingForValue = 0;
 		}else{
-			if(line[dereferencedElement] == '+'){
-				++dereferencedElement;
+			if(line[e] == '+'){
+				++e;
 				lookingForValue = 1;
 			}else{
 				break;
@@ -555,7 +555,7 @@ static Shortcut getShortcut(unsigned int *const element){
 		}
 	}
 	if(shortcut.keycode != AnyKey){
-		*element = dereferencedElement;
+		*element = e;
 	}
 	return shortcut;
 }

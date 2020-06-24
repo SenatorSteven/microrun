@@ -44,7 +44,6 @@ int main(const int argumentCount, const char *const *const argumentVector){
 					if(shortcutAmount){
 						eventLoop();
 					}else{
-						fprintf(stderr, "%s: no shortcuts specified\n", programName);
 						mode = ExitMode;
 					}
 				}else{
