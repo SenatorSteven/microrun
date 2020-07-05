@@ -40,7 +40,6 @@ static bool isCommand(const char *const command, const char *const vector);
 static void ungrabKeys(const Shortcut *const s);
 
 void eventLoop(void){
-	XSelectInput(display, XDefaultRootWindow(display), KeyPressMask);
 	Shortcut shortcut[shortcutAmount];
 	char _command[shortcutAmount][maxCommandLength + 1];
 	char *command[shortcutAmount];
