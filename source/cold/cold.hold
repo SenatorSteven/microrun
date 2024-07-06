@@ -2,7 +2,7 @@
 
 MIT License
 
-Copyright (C) 2020 Stefanos "Steven" Tsakiris
+Copyright (C) 2022 Stefanos "Steven" Tsakiris
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,6 +24,8 @@ SOFTWARE. */
 
 #ifndef COLD_H
 #define COLD_H
+
+#define EMPTY_MACRO /*-*/
 
 /*!CKeywords:{*/
 	#define typedef /*--*/ typedef
@@ -58,6 +60,9 @@ SOFTWARE. */
 	#define continue /*-*/ continue
 	#define goto /*-----*/ goto
 	#define return /*---*/ return
+
+	#undef  inline
+	#define inline /*---*/ EMPTY_MACRO
 /*!}*/
 
 /*!coldKeywords:{*/
@@ -71,39 +76,31 @@ SOFTWARE. */
 	#define or /*-------*/ ||
 	#define not /*------*/ !
 	#define elif /*-----*/ else if
+	#undef  switch
+	#define switch /*---*/ switch(
+	#define over /*-----*/ ){
 	#define to /*-------*/ case
 	#define off /*------*/ default
+	#define end /*------*/ }
 	#define brk /*------*/ break
 	#define jmp /*------*/ goto
 	#define ret /*------*/ return
 /*!}*/
 
+/*!coldFunctions:{*/
+	#define _b(d, b) /*----*/ (d > (sizeof(#b) - 1)? 0 : ((*(#b + (sizeof(#b) - 1) - d) - 48) == 1) * ((uint64)1 << (d - 1)))
 
-
-
-
-
-
-
-
-#define EMPTY_MACRO /*-*/
-
-#define decl /*--------*/ EMPTY_MACRO
-#define set /*---------*/ EMPTY_MACRO
-#define call /*--------*/ EMPTY_MACRO
-
-#undef  switch
-#define switch /*------*/ switch(
-#define over /*--------*/ ){
-#define end /*---------*/ }
-
-
-
-
-
-
-
-
+	#define b(b) /*--------*/ ( \
+		  _b( 1, b) + _b( 2, b) + _b( 3, b) + _b( 4, b) + _b( 5, b) + _b( 6, b) + _b( 7, b) + _b( 8, b) \
+		+ _b( 9, b) + _b(10, b) + _b(11, b) + _b(12, b) + _b(13, b) + _b(14, b) + _b(15, b) + _b(16, b) \
+		+ _b(17, b) + _b(18, b) + _b(19, b) + _b(20, b) + _b(21, b) + _b(22, b) + _b(23, b) + _b(24, b) \
+		+ _b(25, b) + _b(26, b) + _b(27, b) + _b(28, b) + _b(29, b) + _b(30, b) + _b(31, b) + _b(32, b) \
+		+ _b(33, b) + _b(34, b) + _b(35, b) + _b(36, b) + _b(37, b) + _b(38, b) + _b(39, b) + _b(40, b) \
+		+ _b(41, b) + _b(42, b) + _b(43, b) + _b(44, b) + _b(45, b) + _b(46, b) + _b(47, b) + _b(48, b) \
+		+ _b(49, b) + _b(50, b) + _b(51, b) + _b(52, b) + _b(53, b) + _b(54, b) + _b(55, b) + _b(56, b) \
+		+ _b(57, b) + _b(58, b) + _b(59, b) + _b(60, b) + _b(61, b) + _b(62, b) + _b(63, b) + _b(64, b) \
+	)
+/*!}*/
 
 /*!defs:{*/
 	def int8_t /*-------*/ int8;
