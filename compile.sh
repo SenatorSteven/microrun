@@ -42,6 +42,7 @@ function main(){
 	[ $true        ] && { parameters+=(debug-folder "$folder/debug");                      } || :;
 	[ $true        ] && { parameters+=(output-folder "$folder/output");                    } || :;
 	[ $true        ] && { parameters+=(record-folder "$folder/record");                    } || :;
+	[ $true        ] && { parameters+=(includes "-I$(pwd)");                               } || :;
 	[ $true        ] && { parameters+=(mains "$name");                                     } || :;
 	[ $true        ] && { parameters+=(executables "$name");                               } || :;
 	[ $true        ] && { parameters+=(libraries "$libraries");                            } || :;
